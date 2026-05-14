@@ -6,7 +6,7 @@
 
 <!-- ══ 핵심: 브라우저가 Apps Script URL로 자동 이동 ══ -->
 <!-- 여기에_Apps_Script_URL을 실제 URL로 교체하세요 -->
-<meta http-equiv="refresh" content="0;url=https://script.google.com/macros/s/AKfycbxjFQpi5Jzosq0GUhiE1L4ENB4_c3nqEWP8bvBoGGbRfx1xhJCYMV-ZXEjywu6j7tfA1Q/exec">
+
 
 <title>LETUS 근태관리</title>
 <style>
@@ -51,7 +51,7 @@
   document.getElementById('manual-link').href = APP_URL;
 
   // meta refresh 백업 — 혹시 meta refresh가 안 될 경우 JS로도 이동
-  setTimeout(() => { window.location.replace(APP_URL); }, 300);
+  setTimeout(() => { window.location.href = APP_URL; }, 300);
 </script>
 </body>
 </html>
