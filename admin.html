@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LETUS 관리">
+<meta name="theme-color" content="#3D3D3D">
+<link rel="manifest" href="https://haeripark-arch.github.io/letus-app/manifest.json">
+<title>LETUS 관리자 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --dark:    #3D3D3D;
+  --dark2:   #2A2A2A;
+  --white:   #FFFFFF;
+  --gray50:  #F7F7F5;
+  --gray100: #EEEEED;
+  --gray300: #C4C4C0;
+  --gray500: #888884;
+  --green:   #2E7D4F;
+  --green-l: #E8F5EE;
+  --red:     #C0392B;
+  --red-l:   #FDEEEC;
+  --amber:   #B8860B;
+  --amber-l: #FFFBEB;
+  --blue:    #1565C0;
+  --blue-l:  #EEF4FF;
+  --purple:  #6A1B9A;
+  --purple-l:#F3E5F5;
+  --radius:  12px;
+  --shadow:  0 2px 12px rgba(0,0,0,.07);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--gray50); font-family: 'Noto Sans KR', sans-serif; }
+
+/* ── 헤더 ── */
+.adm-header {
+  background: var(--dark2); padding: 18px 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.adm-brand { font-size: 20px; font-weight: 700; color: var(--white); letter-spacing: 5px; }
+.adm-meta  { font-size: 13px; color: var(--gray300); font-family: 'DM Mono', monospace; }
+.adm-refresh {
+  padding: 8px 16px; background: transparent; border: 1px solid var(--gray300);
+  border-radius: 8px; color: var(--gray300); font-size: 13px; cursor: pointer;
+  transition: all .2s; font-family: inherit;
+}
+.adm-refresh:hover { background: var(--white); color: var(--dark); border-color: var(--white); }
+
+/* ── 컨텐츠 ── */
+.adm-body { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+
+/* ── 요약 카드 ── */
+.summary-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px;
+}
+@media(max-width:700px) { .summary-grid { grid-template-columns: repeat(2, 1fr); } }
+.sum-card {
+  background: var(--white); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 20px; text-align: center;
+}
+.sum-card .sum-label { font-size: 12px; color: var(--gray500); margin-bottom: 8px; font-weight: 500; }
+.sum-card .sum-num   { font-size: 36px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--dark); }
+.sum-card.c-green .sum-num { color: var(--green); }
+.sum-card.c-red   .sum-num { color: var(--red);   }
+.sum-card.c-blue  .sum-num { color: var(--blue);  }
+
+/* ── 섹션 헤더 ── */
+.sec-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.sec-title  { font-size: 16px; font-weight: 500; color: var(--dark); }
+.sec-sub    { font-size: 13px; color: var(--gray500); }
+
+/* ── 필터 탭 ── */
+.filter-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.f-tab {
+  padding: 7px 14px; border-radius: 20px; border: 1px solid var(--gray100);
+  font-size: 13px; color: var(--gray500); cursor: pointer; background: var(--white);
+  transition: all .15s;
+}
+.f-tab.active { background: var(--dark); color: var(--white); border-color: var(--dark); }
+
+/* ── 직원 테이블 ── */
+.tbl-wrap { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 28px; }
+.adm-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.adm-table th {
+  background: var(--gray50); padding: 12px 16px; text-align: left;
+  font-size: 12px; font-weight: 500; color: var(--gray500);
+  border-bottom: 1px solid var(--gray100);
+}
+.adm-table td { padding: 14px 16px; border-bottom: 1px solid var(--gray50); vertical-align: middle; }
+.adm-table tr:last-child td { border: none; }
+.adm-table tr:hover td { background: var(--gray50); }
+.mono { font-family: 'DM Mono', monospace; }
+.no-data { text-align: center; padding: 40px; color: var(--gray300); font-size: 14px; }
+
+/* ── 뱃지 ── */
+.badge {
+  display: inline-flex; align-items: center; padding: 3px 10px;
+  border-radius: 20px; font-size: 12px; font-weight: 500;
+}
+.b-normal  { background: var(--green-l);  color: var(--green); }
+.b-leave   { background: var(--amber-l);  color: var(--amber); }
+.b-field   { background: var(--blue-l);   color: var(--blue);  }
+.b-absent  { background: var(--red-l);    color: var(--red);   }
+.b-half    { background: var(--purple-l); color: var(--purple);}
+.b-wait    { background: var(--amber-l);  color: var(--amber); }
+.b-ok      { background: var(--green-l);  color: var(--green); }
+.b-deny    { background: var(--red-l);    color: var(--red);   }
+
+/* ── 승인 버튼 ── */
+.approve-btn {
+  padding: 5px 12px; border-radius: 6px; border: none;
+  font-size: 12px; font-family: inherit; cursor: pointer; font-weight: 500;
+  transition: all .15s; margin-right: 4px;
+}
+.btn-ok   { background: var(--green-l); color: var(--green); }
+.btn-ok:hover   { background: var(--green); color: var(--white); }
+.btn-deny { background: var(--red-l); color: var(--red); }
+.btn-deny:hover { background: var(--red); color: var(--white); }
+
+/* ── 토스트 ── */
+#toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--dark2); color: var(--white); padding: 12px 20px;
+  border-radius: 10px; font-size: 14px; z-index: 9999;
+  opacity: 0; transform: translateY(10px);
+  transition: all .3s; pointer-events: none;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+#toast.success { background: var(--green); }
+#toast.error   { background: var(--red);   }
+
+/* ── 로딩 오버레이 ── */
+#loading {
+  position: fixed; inset: 0; background: rgba(42,42,42,.7);
+  display: flex; align-items: center; justify-content: center; z-index: 9998;
+}
+.spinner {
+  width: 36px; height: 36px; border: 3px solid rgba(255,255,255,.2);
+  border-top-color: var(--white); border-radius: 50%; animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── 근무지 구분 태그 ── */
+.site-tag {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 11px; font-weight: 500;
+}
+.site-y1 { background: #E3F2FD; color: #1565C0; }
+.site-y3 { background: #E8F5E9; color: #2E7D4F; }
+</style>
+</head>
+<body>
+
+<div id="loading"><div class="spinner"></div></div>
+
+<div class="adm-header">
+  <div class="adm-brand">LETUS</div>
+  <div class="adm-meta" id="adm-date"></div>
+  <button class="adm-refresh" onclick="loadData()">↻ 새로고침</button>
+</div>
+
+<div class="adm-body">
+
+  <!-- 요약 카드 -->
+  <div class="summary-grid">
+    <div class="sum-card">
+      <div class="sum-label">총 재직 직원</div>
+      <div class="sum-num" id="s-total">—</div>
+    </div>
+    <div class="sum-card c-green">
+      <div class="sum-label">출근 완료</div>
+      <div class="sum-num" id="s-present">—</div>
+    </div>
+    <div class="sum-card c-red">
+      <div class="sum-label">미출근</div>
+      <div class="sum-num" id="s-absent">—</div>
+    </div>
+    <div class="sum-card c-blue">
+      <div class="sum-label">외근 중</div>
+      <div class="sum-num" id="s-field">—</div>
+    </div>
+  </div>
+
+  <!-- 오늘 근태 현황 -->
+  <div class="sec-header">
+    <div class="sec-title">오늘 근태 현황</div>
+    <div class="sec-sub" id="today-sub"></div>
+  </div>
+
+  <div class="filter-tabs">
+    <div class="f-tab active" data-filter="전체" onclick="filterTable(this)">전체</div>
+    <div class="f-tab" data-filter="정상"   onclick="filterTable(this)">정상출근</div>
+    <div class="f-tab" data-filter="외근"   onclick="filterTable(this)">외근</div>
+    <div class="f-tab" data-filter="반차"   onclick="filterTable(this)">반차</div>
+    <div class="f-tab" data-filter="미출근" onclick="filterTable(this)">미출근</div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table class="adm-table">
+      <thead>
+        <tr>
+          <th>이름</th><th>근무지</th><th>직책</th>
+          <th>근무형태</th><th>출근</th><th>퇴근</th><th>비고</th><th>비밀번호</th>
+        </tr>
+      </thead>
+      <tbody id="emp-tbody">
+        <tr><td colspan="7" class="no-data">불러오는 중...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 휴가 승인 대기 -->
+  <div class="sec-header">
+    <div class="sec-title">휴가 승인 대기</div>
+    <div class="sec-sub" id="leave-sub"></div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table class="adm-table">
+      <thead>
+        <tr>
+          <th>신청자</th><th>유형</th><th>기간</th><th>일수</th><th>신청일</th><th>처리</th>
+        </tr>
+      </thead>
+      <tbody id="leave-tbody">
+        <tr><td colspan="6" class="no-data">불러오는 중...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxjFQpi5Jzosq0GUhiE1L4ENB4_c3nqEWP8bvBoGGbRfx1xhJCYMV-ZXEjywu6j7tfA1Q/exec";
+
+let allEmployees = [];
+let curFilter = '전체';
+let adminEmpId = '';  // 로그인한 관리자 empId (URL 파라미터로 전달)
+
+window.onload = () => {
+  // URL에서 adminId 파라미터 읽기
+  const params = new URLSearchParams(window.location.search);
+  adminEmpId = params.get('adminId') || '';
+  setInterval(updateClock, 1000);
+  updateClock();
+  loadData();
+};
+
+function updateClock() {
+  const now  = new Date();
+  const days = ['일','월','화','수','목','금','토'];
+  document.getElementById('adm-date').textContent =
+    `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} (${days[now.getDay()]}) ` +
+    `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+}
+function pad(n) { return String(n).padStart(2,'0'); }
+
+async function loadData() {
+  document.getElementById('loading').style.display = 'flex';
+  try {
+    const data = await api({ action: 'getAdminData' });
+    allEmployees = data.employees;
+
+    // 요약
+    document.getElementById('s-total').textContent   = data.summary.total;
+    document.getElementById('s-present').textContent = data.summary.present;
+    document.getElementById('s-absent').textContent  = data.summary.absent;
+    document.getElementById('s-field').textContent   = data.summary.onField;
+    document.getElementById('today-sub').textContent = `기준일: ${data.summary.date}`;
+
+    renderEmpTable(allEmployees);
+
+    // 휴가 승인 대기
+    const lv = data.pendingLeaves;
+    document.getElementById('leave-sub').textContent =
+      `대기 ${lv.length}건`;
+    renderLeaveTable(lv);
+
+  } catch(e) { toast(e.message, 'error'); }
+  finally { document.getElementById('loading').style.display = 'none'; }
+}
+
+function renderEmpTable(rows) {
+  if (!rows.length) {
+    document.getElementById('emp-tbody').innerHTML =
+      '<tr><td colspan="7" class="no-data">데이터가 없습니다</td></tr>';
+    return;
+  }
+  document.getElementById('emp-tbody').innerHTML = rows.map(e => `
+    <tr>
+      <td><strong>${e.name}</strong></td>
+      <td><span class="site-tag ${e.site==='양지센터'?'site-y1':'site-y3'}">${e.site}</span></td>
+      <td style="color:var(--gray500);font-size:13px">${e.position}</td>
+      <td>${workBadge(e.workType)}</td>
+      <td class="mono">${e.clockIn  || '<span style="color:var(--gray300)">—</span>'}</td>
+      <td class="mono">${e.clockOut || '<span style="color:var(--gray300)">—</span>'}</td>
+      <td style="font-size:13px;color:var(--gray500)">${e.otType || ''}</td>
+      <td><button class="approve-btn" style="background:var(--gray50);color:var(--dark)"
+        onclick="openPwModal('${e.empId}','${e.name}')">재설정</button></td>
+    </tr>
+  `).join('');
+}
+
+function renderLeaveTable(rows) {
+  if (!rows.length) {
+    document.getElementById('leave-tbody').innerHTML =
+      '<tr><td colspan="6" class="no-data">대기 중인 휴가 신청이 없습니다</td></tr>';
+    return;
+  }
+  document.getElementById('leave-tbody').innerHTML = rows.map(lv => `
+    <tr id="lv-${lv.leaveId}">
+      <td><strong>${lv.name}</strong></td>
+      <td>${leaveBadge(lv.leaveType)} ${lv.halfType ? '<span style="font-size:12px;color:var(--gray500)">'+lv.halfType+'</span>' : ''}</td>
+      <td class="mono" style="font-size:13px">
+        ${lv.startDate}${lv.endDate !== lv.startDate ? ' ~ '+lv.endDate : ''}
+      </td>
+      <td style="text-align:center">${lv.days}일</td>
+      <td class="mono" style="font-size:13px">${lv.applyDate}</td>
+      <td>
+        <button class="approve-btn btn-ok"   onclick="processLeave('${lv.leaveId}','승인')">승인</button>
+        <button class="approve-btn btn-deny" onclick="processLeave('${lv.leaveId}','반려')">반려</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterTable(el) {
+  document.querySelectorAll('.f-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  curFilter = el.dataset.filter;
+  const filtered = curFilter === '전체'
+    ? allEmployees
+    : allEmployees.filter(e => e.workType === curFilter);
+  renderEmpTable(filtered);
+}
+
+async function processLeave(leaveId, status) {
+  try {
+    await api({ action: 'approveLeave', leaveId, status });
+    toast(`${status} 처리 완료`, 'success');
+    document.getElementById(`lv-${leaveId}`)?.remove();
+    // 남은 대기 건수 업데이트
+    const remaining = document.querySelectorAll('#leave-tbody tr').length;
+    document.getElementById('leave-sub').textContent = `대기 ${remaining}건`;
+    if (!remaining) {
+      document.getElementById('leave-tbody').innerHTML =
+        '<tr><td colspan="6" class="no-data">대기 중인 휴가 신청이 없습니다</td></tr>';
+    }
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function workBadge(wt) {
+  const m = {
+    '정상':'b-normal','연차':'b-leave','반차':'b-half','반반차':'b-half',
+    '외근':'b-field','공가':'b-leave','결근':'b-absent','미출근':'b-absent'
+  };
+  return `<span class="badge ${m[wt]||'b-normal'}">${wt}</span>`;
+}
+function leaveBadge(lt) {
+  const m = { '연차':'b-leave','반차':'b-half','반반차':'b-half','공가':'b-leave' };
+  return `<span class="badge ${m[lt]||'b-leave'}">${lt}</span>`;
+}
+
+// ── 비밀번호 재설정 ─────────────────────────────
+let pwTargetEmpId = '';
+function openPwModal(empId, name) {
+  pwTargetEmpId = empId;
+  document.getElementById('pw-modal-target').textContent = `대상 직원: ${name} (${empId})`;
+  document.getElementById('pw-modal-input').value = '';
+  document.getElementById('pw-modal-err').style.display = 'none';
+  const bg = document.getElementById('pw-modal-bg');
+  bg.style.display = 'flex';
+}
+function closePwModal() {
+  document.getElementById('pw-modal-bg').style.display = 'none';
+}
+async function submitPwReset() {
+  const newPw = (document.getElementById('pw-modal-input').value || '').trim();
+  const errEl = document.getElementById('pw-modal-err');
+  if (newPw.length < 4) {
+    errEl.textContent = '비밀번호는 4자리 이상이어야 합니다';
+    errEl.style.display = 'block'; return;
+  }
+  try {
+    await api({ action: 'resetPassword', adminId: adminEmpId, targetEmpId: pwTargetEmpId, newPassword: newPw });
+    closePwModal();
+    toast(`비밀번호가 재설정됐습니다`, 'success');
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+async function api(body) {
+  const res = await fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    redirect: 'follow',
+    credentials: 'omit',
+    headers: { 'Content-Type': 'text/plain' },
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.msg || '서버 오류');
+  return json.data;
+}
+
+let toastTimer;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', 3500);
+}
+</script>
+
+<!-- ══ 비밀번호 재설정 모달 ══ -->
+<div id="pw-modal-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;
+  display:none;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:20px;padding:28px 24px;width:100%;max-width:360px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h3 style="font-size:16px;font-weight:700;color:#3D3D3D;margin:0;">비밀번호 재설정</h3>
+      <button onclick="closePwModal()" style="background:none;border:none;font-size:22px;color:#aaa;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div id="pw-modal-target" style="background:#f4f4f2;border-radius:10px;padding:10px 14px;margin-bottom:16px;
+      font-size:14px;color:#3D3D3D;font-weight:500;"></div>
+    <div id="pw-modal-err" style="display:none;background:#fee2e2;color:#B91C1C;font-size:12px;
+      border-radius:8px;padding:9px 12px;margin-bottom:12px;text-align:center;"></div>
+    <div style="margin-bottom:12px;">
+      <label style="display:block;font-size:11px;font-weight:700;color:#bbb;letter-spacing:.5px;
+        text-transform:uppercase;margin-bottom:6px;">새 비밀번호 (4자리 이상)</label>
+      <input id="pw-modal-input" type="text" placeholder="새 비밀번호 입력"
+        style="width:100%;padding:12px 14px;border:1.5px solid #eee;border-radius:11px;
+        font-size:14px;font-family:inherit;outline:none;"
+        onkeydown="if(event.key==='Enter')submitPwReset()">
+    </div>
+    <button onclick="submitPwReset()" style="width:100%;padding:14px;background:#3D3D3D;color:#fff;
+      border:none;border-radius:11px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;">
+      재설정하기
+    </button>
+  </div>
+</div>
+</body>
+</html>

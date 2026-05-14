@@ -2,56 +2,939 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<!-- ══ 핵심: 브라우저가 Apps Script URL로 자동 이동 ══ -->
-<!-- 여기에_Apps_Script_URL을 실제 URL로 교체하세요 -->
-
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LETUS">
+<meta name="theme-color" content="#3D3D3D">
+<meta name="application-name" content="LETUS 근태관리">
+<link rel="manifest" href="https://haeripark-arch.github.io/letus-app/manifest.json">
 <title>LETUS 근태관리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@900&family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body {
-    height: 100%; background: #3D3D3D;
-    font-family: 'Noto Sans KR', sans-serif;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .wrap { text-align: center; padding: 40px 24px; }
-  .brand {
-    font-size: 48px; font-weight: 900; color: #fff;
-    letter-spacing: 6px; margin-bottom: 12px;
-    font-family: Georgia, serif;
-  }
-  .sub { font-size: 13px; color: #888; letter-spacing: 2px; margin-bottom: 40px; }
-  .spinner {
-    width: 36px; height: 36px; margin: 0 auto 20px;
-    border: 3px solid rgba(255,255,255,.15);
-    border-top-color: #fff; border-radius: 50%;
-    animation: spin .8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .msg { font-size: 13px; color: #666; margin-bottom: 16px; }
-  .manual-link {
-    display: inline-block; margin-top: 8px;
-    font-size: 13px; color: #aaa; text-decoration: underline; cursor: pointer;
-  }
+:root {
+  --dark:    #3D3D3D;
+  --dark2:   #2A2A2A;
+  --white:   #FFFFFF;
+  --gray50:  #F7F7F5;
+  --gray100: #EEEEED;
+  --gray300: #C4C4C0;
+  --gray500: #888884;
+  --accent:  #3D3D3D;
+  --green:   #2E7D4F;
+  --green-l: #E8F5EE;
+  --red:     #C0392B;
+  --red-l:   #FDEEEC;
+  --amber:   #B8860B;
+  --amber-l: #FFFBEB;
+  --blue:    #1565C0;
+  --blue-l:  #EEF4FF;
+  --radius:  16px;
+  --shadow:  0 2px 16px rgba(0,0,0,.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--gray50); font-family: 'Noto Sans KR', sans-serif; }
+
+/* ── 로그인 / 비밀번호변경 공통 ── */
+#login-screen, #change-pw-screen {
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 32px 20px;
+  background: var(--dark2);
+}
+.login-logo { margin-bottom: 36px; text-align: center; }
+.login-logo .brand { font-size: 40px; font-weight: 700; color: var(--white); letter-spacing: 6px; font-family: 'Nunito', sans-serif; }
+.login-logo .sub   { font-size: 11px; color: var(--gray500); margin-top: 6px; letter-spacing: 2.5px; }
+.login-card {
+  width: 100%; max-width: 360px;
+  background: var(--white); border-radius: 20px;
+  padding: 28px 24px;
+}
+.login-card h2 { font-size: 15px; font-weight: 700; color: var(--dark); margin-bottom: 20px; }
+.login-err {
+  background: var(--red-l); color: var(--red); font-size: 12px;
+  border-radius: 8px; padding: 9px 12px; margin-bottom: 14px; text-align: center;
+}
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 11px; color: var(--gray500); margin-bottom: 6px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+.input-wrap { position: relative; display: flex; align-items: center; }
+.input-icon { position: absolute; left: 12px; font-size: 15px; pointer-events: none; z-index: 1; }
+.input-wrap input {
+  width: 100%; padding: 12px 42px 12px 36px; border: 1.5px solid var(--gray100);
+  border-radius: 11px; font-size: 14px; font-family: inherit;
+  outline: none; transition: border .2s; background: #fafafa;
+}
+.input-wrap input:focus { border-color: var(--dark); background: var(--white); }
+.input-wrap input.err { border-color: var(--red); background: var(--red-l); }
+.pw-toggle {
+  position: absolute; right: 10px; background: none; border: none;
+  cursor: pointer; font-size: 16px; padding: 4px; line-height: 1;
+}
+.btn-primary {
+  width: 100%; padding: 14px; background: var(--dark); color: var(--white);
+  border: none; border-radius: 11px; font-size: 14px; font-weight: 700;
+  font-family: inherit; cursor: pointer; transition: opacity .2s, transform .1s;
+  margin-top: 6px; letter-spacing: .5px;
+}
+.btn-primary:active { opacity: .8; transform: scale(.98); }
+.btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+.login-hint { text-align: center; font-size: 12px; color: var(--gray300); margin-top: 14px; line-height: 1.6; }
+.login-hint b { color: var(--gray500); }
+
+/* ── 비밀번호 변경 ── */
+.cpw-header { text-align: center; margin-bottom: 20px; }
+.cpw-body   { width: 100%; max-width: 360px; }
+.cpw-notice {
+  background: #fff8e1; border-radius: 16px; padding: 18px 20px;
+  border: 0.5px solid #ffe082;
+}
+.cpw-notice-icon  { font-size: 22px; margin-bottom: 8px; }
+.cpw-notice-title { font-size: 13px; font-weight: 700; color: #92400E; margin-bottom: 4px; }
+.cpw-notice-desc  { font-size: 12px; color: #B45309; line-height: 1.6; }
+
+/* ── 메인 앱 ── */
+#app { display: none; min-height: 100vh; }
+.app-header {
+  background: var(--dark2); padding: 20px 20px 16px;
+  position: sticky; top: 0; z-index: 100;
+}
+.header-top { display: flex; justify-content: space-between; align-items: center; }
+.header-brand { font-size: 18px; font-weight: 700; color: var(--white); letter-spacing: 4px; font-family: 'Nunito', sans-serif; }
+.header-user  { font-size: 13px; color: var(--gray300); }
+.header-date  { font-size: 12px; color: var(--gray500); margin-top: 6px; font-family: 'DM Mono', monospace; }
+
+/* ── 탭 ── */
+.tabs {
+  display: flex; background: var(--white);
+  border-bottom: 1px solid var(--gray100); position: sticky; top: 76px; z-index: 99;
+}
+.tab {
+  flex: 1; padding: 14px 0; text-align: center;
+  font-size: 13px; font-weight: 500; color: var(--gray500);
+  cursor: pointer; border-bottom: 2px solid transparent; transition: all .2s;
+}
+.tab.active { color: var(--dark); border-bottom-color: var(--dark); }
+
+/* ── 패널 ── */
+.panel { display: none; padding: 20px 16px; }
+.panel.active { display: block; }
+
+/* ── 카드 공통 ── */
+.card {
+  background: var(--white); border-radius: var(--radius);
+  box-shadow: var(--shadow); margin-bottom: 16px; overflow: hidden;
+}
+.card-header { padding: 16px 20px 12px; border-bottom: 1px solid var(--gray100); }
+.card-header h3 { font-size: 14px; font-weight: 500; color: var(--dark); }
+.card-body { padding: 20px; }
+
+/* ── 오늘 상태 카드 ── */
+.status-card {
+  background: var(--dark2); border-radius: var(--radius);
+  padding: 24px 20px; margin-bottom: 16px; color: var(--white);
+}
+.status-date { font-size: 12px; color: var(--gray300); font-family: 'DM Mono', monospace; margin-bottom: 8px; }
+.status-name { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.status-pos  { font-size: 13px; color: var(--gray300); margin-bottom: 20px; }
+.status-row  { display: flex; gap: 16px; }
+.status-item { flex: 1; }
+.status-item .label { font-size: 11px; color: var(--gray300); margin-bottom: 4px; }
+.status-item .value { font-size: 18px; font-weight: 500; font-family: 'DM Mono', monospace; }
+.status-item .value.empty { color: var(--gray500); font-size: 14px; }
+
+/* ── 뱃지 ── */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500;
+}
+.badge-normal { background: var(--green-l);  color: var(--green); }
+.badge-leave  { background: var(--amber-l);  color: var(--amber); }
+.badge-field  { background: var(--blue-l);   color: var(--blue);  }
+.badge-absent { background: var(--red-l);    color: var(--red);   }
+.badge-half   { background: #F3E5F5; color: #6A1B9A; }
+
+/* ── 근무형태 선택 ── */
+.work-type-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px;
+}
+.wt-btn {
+  padding: 12px 8px; text-align: center; border: 1.5px solid var(--gray100);
+  border-radius: 10px; cursor: pointer; transition: all .15s;
+  font-size: 13px; font-weight: 500; color: var(--gray500); background: var(--white);
+}
+.wt-btn:hover    { border-color: var(--dark); color: var(--dark); }
+.wt-btn.selected { border-color: var(--dark); background: var(--dark); color: var(--white); }
+
+/* ── 서브 선택 ── */
+.sub-select { display: none; margin-bottom: 16px; }
+.sub-select.show { display: block; }
+.sub-label { font-size: 12px; color: var(--gray500); margin-bottom: 8px; font-weight: 500; }
+.sub-grid { display: flex; gap: 8px; flex-wrap: wrap; }
+.sub-btn {
+  padding: 8px 16px; border: 1.5px solid var(--gray100); border-radius: 8px;
+  cursor: pointer; font-size: 13px; color: var(--gray500); background: var(--white);
+  transition: all .15s;
+}
+.sub-btn.selected { border-color: var(--dark); background: var(--dark); color: var(--white); }
+
+/* ── 위치 표시 ── */
+.location-bar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; background: var(--gray50);
+  border-radius: 10px; margin-bottom: 16px;
+  font-size: 13px; color: var(--gray500);
+}
+.loc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.loc-dot.ok  { background: var(--green); box-shadow: 0 0 0 3px var(--green-l); }
+.loc-dot.err { background: var(--red);   box-shadow: 0 0 0 3px var(--red-l);   }
+.loc-dot.loading { background: var(--gray300); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* ── 출근 버튼 ── */
+.clock-btn {
+  width: 100%; padding: 18px; border-radius: 12px; border: none;
+  font-size: 16px; font-weight: 700; font-family: inherit;
+  cursor: pointer; transition: all .2s; letter-spacing: 1px;
+}
+.clock-btn.in  { background: var(--dark); color: var(--white); }
+.clock-btn.out { background: var(--white); color: var(--dark); border: 2px solid var(--dark); }
+.clock-btn:disabled { opacity: .4; cursor: not-allowed; }
+.clock-btn:not(:disabled):active { transform: scale(.98); }
+
+/* ── 근무기록 테이블 ── */
+.log-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.log-table th {
+  text-align: center; padding: 10px 8px; font-size: 11px; font-weight: 500;
+  color: var(--gray500); border-bottom: 1px solid var(--gray100);
+}
+.log-table td { text-align: center; padding: 12px 8px; border-bottom: 1px solid var(--gray50); }
+.log-table tr:last-child td { border: none; }
+.no-data { text-align: center; padding: 40px; color: var(--gray300); font-size: 14px; }
+
+/* ── 월 선택 ── */
+.month-nav { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 16px; }
+.month-nav button {
+  width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--gray100);
+  background: var(--white); cursor: pointer; font-size: 16px; display: flex;
+  align-items: center; justify-content: center;
+}
+.month-label { font-size: 15px; font-weight: 500; color: var(--dark); font-family: 'DM Mono', monospace; }
+
+/* ── 휴가 신청 폼 ── */
+.form-field { margin-bottom: 16px; }
+.form-field label { display: block; font-size: 12px; color: var(--gray500); margin-bottom: 6px; font-weight: 500; }
+.form-field select, .form-field input[type="date"] {
+  width: 100%; padding: 12px 14px; border: 1.5px solid var(--gray100);
+  border-radius: 10px; font-size: 15px; font-family: inherit; outline: none;
+  background: var(--white); appearance: none; cursor: pointer;
+}
+.form-field select:focus, .form-field input[type="date"]:focus { border-color: var(--dark); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-field textarea {
+  width: 100%; padding: 12px 14px; border: 1.5px solid var(--gray100);
+  border-radius: 10px; font-size: 14px; font-family: inherit; outline: none;
+  resize: none; min-height: 80px;
+}
+
+/* ── 토스트 ── */
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: var(--dark2); color: var(--white); padding: 12px 20px;
+  border-radius: 10px; font-size: 14px; z-index: 9999;
+  transition: transform .3s ease; max-width: 320px; text-align: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,.3);
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
+#toast.error { background: var(--red); }
+#toast.success { background: var(--green); }
+
+/* ── 로딩 ── */
+.spinner {
+  width: 20px; height: 20px; border: 2px solid rgba(255,255,255,.3);
+  border-top-color: var(--white); border-radius: 50%; animation: spin .7s linear infinite;
+  display: inline-block; vertical-align: middle; margin-right: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.admin-link {
+  text-align: center; padding: 20px;
+  font-size: 13px; color: var(--gray500);
+}
+.admin-link a { color: var(--dark); text-decoration: underline; }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="brand">LETUS</div>
-  <div class="sub">근태관리 시스템</div>
-  <div class="spinner"></div>
-  <div class="msg">앱으로 이동 중...</div>
-  <a class="manual-link" id="manual-link">자동으로 이동하지 않으면 여기를 탭하세요</a>
+
+<!-- ══ 로그인 화면 ════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-logo">
+    <div class="brand">LETUS</div>
+    <div class="sub">근태관리 시스템</div>
+  </div>
+  <div class="login-card">
+    <h2>직원 로그인</h2>
+    <div id="login-err" class="login-err" style="display:none"></div>
+    <div class="field">
+      <label>직원 ID</label>
+      <div class="input-wrap">
+        <span class="input-icon">🪪</span>
+        <input type="text" id="empid-input" placeholder="EMP001" autocomplete="username"
+               oninput="clearLoginErr()" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+    </div>
+    <div class="field">
+      <label>비밀번호</label>
+      <div class="input-wrap">
+        <span class="input-icon">🔒</span>
+        <input type="password" id="pw-input" placeholder="비밀번호 입력" autocomplete="current-password"
+               oninput="clearLoginErr()" onkeydown="if(event.key==='Enter')doLogin()">
+        <button class="pw-toggle" type="button" onclick="togglePw('pw-input','eye-icon')" tabindex="-1">
+          <span id="eye-icon">👁</span>
+        </button>
+      </div>
+    </div>
+    <button class="btn-primary" id="login-btn" onclick="doLogin()">로그인</button>
+    <div class="login-hint">비밀번호를 잊으셨나요? <b>관리자에게 문의하세요</b></div>
+  </div>
+</div>
+
+<!-- ══ 초기 비밀번호 안내 화면 ══════════════════════ -->
+<div id="change-pw-screen" style="display:none">
+  <div class="cpw-header">
+    <div class="brand" style="font-size:28px;letter-spacing:5px;font-family:'Nunito',sans-serif;">LETUS</div>
+  </div>
+  <div class="cpw-body">
+    <div class="cpw-notice">
+      <div class="cpw-notice-icon">🔐</div>
+      <div class="cpw-notice-title">초기 비밀번호로 로그인됐습니다</div>
+      <div class="cpw-notice-desc">비밀번호 변경이 필요하다면<br><b>관리자에게 재설정을 요청하세요.</b></div>
+    </div>
+    <div class="login-card" style="margin-top:16px;">
+      <h2>안내</h2>
+      <p style="font-size:13px;color:var(--gray500);line-height:1.7;margin-bottom:20px;">
+        보안을 위해 관리자가 직접 비밀번호를 설정 및 재설정합니다.<br>
+        변경이 필요하시면 관리자에게 문의해주세요.
+      </p>
+      <button class="btn-primary" onclick="skipChangePw()">확인하고 시작하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 메인 앱 ════════════════════════════════════ -->
+<div id="app">
+  <div class="app-header">
+    <div class="header-top">
+      <div class="header-brand">LETUS</div>
+      <div class="header-user" id="header-user"></div>
+    </div>
+    <div class="header-date" id="header-date"></div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('today')">오늘</div>
+    <div class="tab" onclick="switchTab('history')">근무기록</div>
+    <div class="tab" onclick="switchTab('leave')">휴가신청</div>
+  </div>
+
+  <!-- ▶ 오늘 패널 -->
+  <div class="panel active" id="panel-today">
+    <!-- 상태 카드 -->
+    <div class="status-card">
+      <div class="status-date" id="s-date"></div>
+      <div class="status-name" id="s-name"></div>
+      <div class="status-pos"  id="s-pos"></div>
+      <div class="status-row">
+        <div class="status-item">
+          <div class="label">출근</div>
+          <div class="value" id="s-in">—</div>
+        </div>
+        <div class="status-item">
+          <div class="label">퇴근</div>
+          <div class="value" id="s-out">—</div>
+        </div>
+        <div class="status-item">
+          <div class="label">근무형태</div>
+          <div id="s-type" style="margin-top:2px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 출근 폼 카드 -->
+    <div class="card" id="clock-card">
+      <div class="card-header"><h3>출 · 퇴근</h3></div>
+      <div class="card-body">
+
+        <!-- 근무형태 선택 -->
+        <div id="work-type-section">
+          <div class="sub-label">근무형태 선택</div>
+          <div class="work-type-grid" id="wt-grid">
+            <div class="wt-btn selected" data-wt="정상" onclick="selectWT(this)">정상</div>
+            <div class="wt-btn" data-wt="연차"   onclick="selectWT(this)">연차</div>
+            <div class="wt-btn" data-wt="반차"   onclick="selectWT(this)">반차</div>
+            <div class="wt-btn" data-wt="반반차" onclick="selectWT(this)">반반차</div>
+            <div class="wt-btn" data-wt="외근"   onclick="selectWT(this)">외근</div>
+            <div class="wt-btn" data-wt="공가"   onclick="selectWT(this)">공가</div>
+          </div>
+
+          <!-- 반차 구분 -->
+          <div class="sub-select" id="sub-half">
+            <div class="sub-label">반차 구분</div>
+            <div class="sub-grid">
+              <div class="sub-btn selected" data-sub="오전" onclick="selectSub('half',this)">오전 반차</div>
+              <div class="sub-btn" data-sub="오후" onclick="selectSub('half',this)">오후 반차</div>
+            </div>
+          </div>
+          <!-- 반반차 구분 -->
+          <div class="sub-select" id="sub-halfhalf">
+            <div class="sub-label">반반차 구분</div>
+            <div class="sub-grid">
+              <div class="sub-btn selected" data-sub="오전" onclick="selectSub('halfhalf',this)">오전 반반차</div>
+              <div class="sub-btn" data-sub="오후" onclick="selectSub('halfhalf',this)">오후 반반차</div>
+            </div>
+          </div>
+          <!-- 외근 구분 -->
+          <div class="sub-select" id="sub-ot">
+            <div class="sub-label">외근 구분</div>
+            <div class="sub-grid">
+              <div class="sub-btn selected" data-sub="종일" onclick="selectSub('ot',this)">종일</div>
+              <div class="sub-btn" data-sub="오전" onclick="selectSub('ot',this)">오전</div>
+              <div class="sub-btn" data-sub="오후" onclick="selectSub('ot',this)">오후</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 위치 -->
+        <div class="location-bar">
+          <div class="loc-dot loading" id="loc-dot"></div>
+          <span id="loc-text">위치 확인 중...</span>
+        </div>
+
+        <!-- 버튼 -->
+        <button class="clock-btn in"  id="btn-in"  onclick="doClock('in')"  disabled>출근하기</button>
+        <div style="height:10px"></div>
+        <button class="clock-btn out" id="btn-out" onclick="doClock('out')" disabled style="display:none">퇴근하기</button>
+      </div>
+    </div>
+
+    <div class="admin-link" id="admin-link" style="display:none">
+      <a onclick="goAdmin()">📊 관리자 대시보드 →</a>
+    </div>
+  </div>
+
+  <!-- ▶ 근무기록 패널 -->
+  <div class="panel" id="panel-history">
+    <div class="month-nav">
+      <button onclick="changeMonth(-1)">◀</button>
+      <div class="month-label" id="month-label"></div>
+      <button onclick="changeMonth(1)">▶</button>
+    </div>
+    <div class="card">
+      <div class="card-body" style="padding:0">
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th>날짜</th><th>형태</th><th>출근</th><th>퇴근</th>
+            </tr>
+          </thead>
+          <tbody id="log-tbody">
+            <tr><td colspan="4" class="no-data">불러오는 중...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ▶ 휴가신청 패널 -->
+  <div class="panel" id="panel-leave">
+    <div class="card">
+      <div class="card-header"><h3>휴가 신청</h3></div>
+      <div class="card-body">
+        <div class="form-field">
+          <label>휴가 유형</label>
+          <select id="lv-type" onchange="onLeaveTypeChange()">
+            <option value="연차">연차</option>
+            <option value="반차">반차</option>
+            <option value="반반차">반반차</option>
+            <option value="공가">공가</option>
+          </select>
+        </div>
+        <div class="form-field" id="lv-half-row" style="display:none">
+          <label>반차 구분</label>
+          <select id="lv-half">
+            <option value="오전">오전</option>
+            <option value="오후">오후</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>시작일</label>
+            <input type="date" id="lv-start">
+          </div>
+          <div class="form-field" id="lv-end-wrap">
+            <label>종료일</label>
+            <input type="date" id="lv-end">
+          </div>
+        </div>
+        <div class="form-field">
+          <label>비고 (선택)</label>
+          <textarea id="lv-note" placeholder="사유를 입력하세요..."></textarea>
+        </div>
+        <button class="btn-primary" onclick="submitLeave()">신청하기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── 설정 ─────────────────────────────────────────
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxjFQpi5Jzosq0GUhiE1L4ENB4_c3nqEWP8bvBoGGbRfx1xhJCYMV-ZXEjywu6j7tfA1Q/exec";
+
+// ── 상태 ─────────────────────────────────────────
+let emp = null, todayLog = null;
+let curLat = null, curLng = null, geoOk = false;
+let curMonth = "";
+let selWT = "정상", selHalf = "오전", selHalfHalf = "오전", selOT = "종일";
+
+// ── 초기화 ────────────────────────────────────────
+window.onload = () => {
+  setInterval(updateClock, 1000);
+  updateClock();
+  const today = new Date();
+  curMonth = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+  const today0 = today.toISOString().split('T')[0];
+  document.getElementById('lv-start').value = today0;
+  document.getElementById('lv-end').value   = today0;
+};
+
+function updateClock() {
+  const now  = new Date();
+  const days = ['일','월','화','수','목','금','토'];
+  const ds   = `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} (${days[now.getDay()]})`;
+  const ts   = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  document.getElementById('header-date').textContent = ds + '  ' + ts;
+  if (document.getElementById('s-date'))
+    document.getElementById('s-date').textContent = ds;
+}
+function pad(n) { return String(n).padStart(2,'0'); }
+
+// ── 로그인 ────────────────────────────────────────
+function togglePw(inputId, iconId) {
+  const inp = document.getElementById(inputId);
+  const ico = document.getElementById(iconId);
+  if (inp.type === 'password') { inp.type = 'text';     if(ico) ico.textContent = '🙈'; }
+  else                         { inp.type = 'password'; if(ico) ico.textContent = '👁'; }
+}
+function clearLoginErr() {
+  const e = document.getElementById('login-err');
+  if (e) { e.style.display = 'none'; e.textContent = ''; }
+  ['empid-input','pw-input'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('err');
+  });
+}
+function showLoginErr(msg) {
+  const e = document.getElementById('login-err');
+  if (e) { e.textContent = msg; e.style.display = 'block'; }
+  ['empid-input','pw-input'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('err');
+  });
+}
+
+async function doLogin() {
+  const empId    = (document.getElementById('empid-input').value || '').trim();
+  const password = (document.getElementById('pw-input').value    || '').trim();
+  if (!empId)    { showLoginErr('직원 ID를 입력해주세요'); return; }
+  if (!password) { showLoginErr('비밀번호를 입력해주세요'); return; }
+
+  const btn = document.getElementById('login-btn');
+  btn.innerHTML = '<span class="spinner"></span>확인 중...';
+  btn.disabled  = true;
+  try {
+    const res = await api({ action: 'login', empId, password });
+    emp = res;
+    const logRes = await api({ action: 'getTodayLog', empId: emp.empId });
+    todayLog = logRes;
+
+    if (emp.isFirst) {
+      // 초기 비밀번호 → 변경 권장 화면
+      document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('change-pw-screen').style.display = 'none';
+      document.getElementById('change-pw-screen').style.display = 'flex';
+    } else {
+      initApp();
+    }
+  } catch(e) {
+    showLoginErr(e.message);
+    btn.innerHTML = '로그인';
+    btn.disabled  = false;
+  }
+}
+
+function skipChangePw() {
+  document.getElementById('change-pw-screen').style.display = 'none';
+  initApp();
+}
+
+function initApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+
+  document.getElementById('header-user').textContent = emp.name;
+  document.getElementById('s-name').textContent = emp.name;
+  document.getElementById('s-pos').textContent  = `${emp.position} · ${emp.site}`;
+
+  if (emp.isAdmin) document.getElementById('admin-link').style.display = 'block';
+
+  updateTodayUI();
+  startGeo();
+}
+
+function updateTodayUI() {
+  const inEl  = document.getElementById('s-in');
+  const outEl = document.getElementById('s-out');
+  const typeEl= document.getElementById('s-type');
+  const btnIn = document.getElementById('btn-in');
+  const btnOut= document.getElementById('btn-out');
+  const wtSec = document.getElementById('work-type-section');
+
+  if (todayLog && todayLog.clockIn) {
+    inEl.textContent  = todayLog.clockIn;
+    inEl.classList.remove('empty');
+    outEl.textContent = todayLog.clockOut || '—';
+    typeEl.innerHTML  = workTypeBadge(todayLog.workType);
+
+    // 이미 출근 → 형태 선택 숨기고 퇴근 버튼만 표시
+    wtSec.style.display = 'none';
+    btnIn.style.display  = 'none';
+    if (!todayLog.clockOut) {
+      btnOut.style.display = 'block';
+      btnOut.disabled = false;
+    } else {
+      btnOut.style.display = 'none';
+      document.getElementById('clock-card').querySelector('.card-header h3').textContent = '오늘 근무 완료 ✓';
+    }
+  } else {
+    inEl.textContent = '—'; inEl.classList.add('empty');
+    outEl.textContent = '—'; outEl.classList.add('empty');
+    typeEl.innerHTML = '';
+    wtSec.style.display = 'block';
+    btnIn.style.display  = 'block';
+    btnOut.style.display = 'none';
+  }
+}
+
+function workTypeBadge(wt) {
+  const map = {
+    '정상':'badge-normal','연차':'badge-leave','반차':'badge-half',
+    '반반차':'badge-half','외근':'badge-field','공가':'badge-leave',
+    '결근':'badge-absent','미출근':'badge-absent'
+  };
+  return `<span class="badge ${map[wt]||'badge-normal'}">${wt}</span>`;
+}
+
+// ── 위치 ─────────────────────────────────────────
+function startGeo() {
+  if (!navigator.geolocation) {
+    setLocUI(false, 'GPS를 지원하지 않는 브라우저입니다');
+    return;
+  }
+  navigator.geolocation.watchPosition(
+    pos => {
+      curLat = pos.coords.latitude;
+      curLng = pos.coords.longitude;
+      const dist = haversine(curLat, curLng, emp.siteLat, emp.siteLng);
+      const radius = emp.radius || 50;
+
+      if (selWT === '외근') {
+        geoOk = true;
+        setLocUI(true, `외근 모드 · 위치 제한 없음`);
+      } else {
+        geoOk = dist <= radius;
+        setLocUI(geoOk,
+          geoOk ? `${emp.site} 내 (${Math.round(dist)}m)`
+                : `근무지 외 ${Math.round(dist)}m · 반경 ${radius}m 초과`
+        );
+      }
+      updateClockBtnState();
+    },
+    err => {
+      setLocUI(false, '위치 권한을 허용해주세요');
+      updateClockBtnState();
+    },
+    { enableHighAccuracy: true, maximumAge: 5000 }
+  );
+}
+
+function setLocUI(ok, msg) {
+  const dot  = document.getElementById('loc-dot');
+  const text = document.getElementById('loc-text');
+  dot.className  = 'loc-dot ' + (ok ? 'ok' : 'err');
+  text.textContent = msg;
+}
+
+function updateClockBtnState() {
+  const btnIn = document.getElementById('btn-in');
+  if (btnIn.style.display !== 'none') {
+    const canClock = selWT === '연차' || selWT === '공가' || geoOk;
+    btnIn.disabled = !canClock;
+  }
+}
+
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 6371000, toR = Math.PI/180;
+  const φ1 = lat1*toR, φ2 = lat2*toR;
+  const Δφ = (lat2-lat1)*toR, Δλ = (lng2-lng1)*toR;
+  const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// ── 근무형태 선택 ─────────────────────────────────
+function selectWT(el) {
+  document.querySelectorAll('.wt-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  selWT = el.dataset.wt;
+
+  document.getElementById('sub-half').classList.toggle('show', selWT === '반차');
+  document.getElementById('sub-halfhalf').classList.toggle('show', selWT === '반반차');
+  document.getElementById('sub-ot').classList.toggle('show', selWT === '외근');
+
+  // 연차·공가는 위치 무관 출근 가능
+  if (selWT === '연차' || selWT === '공가') {
+    geoOk = true;
+    setLocUI(true, `${selWT} — 위치 확인 불필요`);
+  } else if (selWT === '외근') {
+    geoOk = true;
+  } else {
+    // 다시 위치 체크
+    if (curLat) {
+      const dist = haversine(curLat, curLng, emp.siteLat, emp.siteLng);
+      geoOk = dist <= emp.radius;
+    }
+  }
+  updateClockBtnState();
+}
+
+function selectSub(type, el) {
+  const parent = el.closest('.sub-select');
+  parent.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  if (type === 'half')     selHalf     = el.dataset.sub;
+  if (type === 'halfhalf') selHalfHalf = el.dataset.sub;
+  if (type === 'ot')       selOT       = el.dataset.sub;
+}
+
+// ── 출 / 퇴근 처리 ───────────────────────────────
+async function doClock(dir) {
+  const btn = dir === 'in' ? document.getElementById('btn-in') : document.getElementById('btn-out');
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span>${dir==='in'?'출근':'퇴근'} 처리 중...`;
+
+  try {
+    if (dir === 'in') {
+      const res = await api({
+        action: 'clockIn',
+        empId: emp.empId,
+        name:  emp.name,
+        workType:     selWT,
+        halfType:     selWT === '반차'   ? selHalf     : '',
+        halfHalfType: selWT === '반반차' ? selHalfHalf : '',
+        otType:       selWT === '외근'   ? selOT       : '',
+        lat: curLat,
+        lng: curLng,
+      });
+      todayLog = { ...res, workType: selWT, clockIn: res.clockIn, clockOut: '' };
+      toast(`출근 완료 ${res.clockIn}`, 'success');
+    } else {
+      const res = await api({ action: 'clockOut', empId: emp.empId, lat: curLat, lng: curLng });
+      todayLog.clockOut = res.clockOut;
+      toast(`퇴근 완료 ${res.clockOut}`, 'success');
+    }
+    updateTodayUI();
+  } catch(e) {
+    toast(e.message, 'error');
+    btn.disabled = false;
+    btn.textContent = dir === 'in' ? '출근하기' : '퇴근하기';
+  }
+}
+
+// ── 근무기록 ─────────────────────────────────────
+async function loadHistory() {
+  document.getElementById('month-label').textContent = curMonth;
+  document.getElementById('log-tbody').innerHTML =
+    '<tr><td colspan="4" class="no-data">불러오는 중...</td></tr>';
+  try {
+    const logs = await api({ action: 'getMyLogs', empId: emp.empId, month: curMonth });
+    if (!logs.length) {
+      document.getElementById('log-tbody').innerHTML =
+        '<tr><td colspan="4" class="no-data">기록이 없습니다</td></tr>';
+      return;
+    }
+    document.getElementById('log-tbody').innerHTML = logs.map(l => `
+      <tr>
+        <td>${l.date.slice(5)}</td>
+        <td>${workTypeBadge(l.workType)}</td>
+        <td style="font-family:'DM Mono',monospace">${l.clockIn  || '—'}</td>
+        <td style="font-family:'DM Mono',monospace">${l.clockOut || '—'}</td>
+      </tr>
+    `).join('');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function changeMonth(dir) {
+  const [y, m] = curMonth.split('-').map(Number);
+  const d = new Date(y, m - 1 + dir, 1);
+  curMonth = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  loadHistory();
+}
+
+// ── 휴가 신청 ─────────────────────────────────────
+function onLeaveTypeChange() {
+  const v = document.getElementById('lv-type').value;
+  document.getElementById('lv-half-row').style.display =
+    (v === '반차' || v === '반반차') ? 'block' : 'none';
+  document.getElementById('lv-end-wrap').style.display =
+    v === '연차' ? 'block' : 'none';
+}
+
+async function submitLeave() {
+  const type  = document.getElementById('lv-type').value;
+  const half  = document.getElementById('lv-half').value;
+  const start = document.getElementById('lv-start').value;
+  const end   = document.getElementById('lv-end').value   || start;
+  const note  = document.getElementById('lv-note').value;
+  if (!start) { toast('날짜를 선택해주세요', 'error'); return; }
+  try {
+    const res = await api({
+      action: 'requestLeave', empId: emp.empId, name: emp.name,
+      leaveType: type, halfType: half, startDate: start, endDate: end, note,
+    });
+    toast(`휴가 신청 완료 (${res.days}일)`, 'success');
+    document.getElementById('lv-note').value = '';
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── 탭 전환 ──────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const names = ['today','history','leave'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`panel-${name}`).classList.add('active');
+  if (name === 'history') loadHistory();
+}
+
+// ── 관리자 이동 ───────────────────────────────────
+function goAdmin() {
+  const url = SCRIPT_URL + '?page=admin&adminId=' + encodeURIComponent(emp.empId);
+  window.open(url, '_blank');
+}
+
+// ── API 호출 ──────────────────────────────────────
+async function api(body) {
+  // GitHub Pages → Apps Script 직접 호출
+  // /u/N/ 문제를 피하기 위해 fetch에서 계정 쿠키를 보내지 않음
+  const res = await fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    redirect: 'follow',
+    credentials: 'omit',   // ← 핵심: 구글 계정 쿠키를 보내지 않음
+    headers: { 'Content-Type': 'text/plain' },
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.msg || '서버 오류');
+  return json.data;
+}
+
+// ── 토스트 ───────────────────────────────────────
+let toastTimer;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', 3000);
+}
+</script>
+
+<!-- ══ PWA: iOS 홈화면 배너 + SW 등록 ══ -->
+<div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;
+  background:#2A2A2A;color:#fff;padding:14px 16px 20px;font-family:'Noto Sans KR',sans-serif;
+  border-top-left-radius:16px;border-top-right-radius:16px;box-shadow:0 -4px 20px rgba(0,0,0,.3);">
+  <div style="display:flex;align-items:flex-start;gap:12px;">
+    <div style="font-size:28px;flex-shrink:0;">📱</div>
+    <div style="flex:1;">
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px;">홈 화면에 추가하기</div>
+      <div style="font-size:12px;color:#aaa;line-height:1.6;">
+        Safari 하단의 <b style="color:#fff">공유 버튼(⎙)</b>을 누르고<br>
+        <b style="color:#fff">"홈 화면에 추가"</b>를 선택하면<br>
+        앱처럼 바로 실행할 수 있어요.
+      </div>
+    </div>
+    <button onclick="closePwaBanner()" style="background:none;border:none;color:#888;
+      font-size:20px;cursor:pointer;padding:0;line-height:1;flex-shrink:0;">✕</button>
+  </div>
 </div>
 
 <script>
-  const APP_URL = "https://script.google.com/macros/s/AKfycbxjFQpi5Jzosq0GUhiE1L4ENB4_c3nqEWP8bvBoGGbRfx1xhJCYMV-ZXEjywu6j7tfA1Q/exec"; // ← 필수 변경
-  document.getElementById('manual-link').href = APP_URL;
+// ── PWA: Service Worker 등록 ──────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('https://haeripark-arch.github.io/letus-app/sw.js').catch(() => {});
+  });
+}
 
-  // meta refresh 백업 — 혹시 meta refresh가 안 될 경우 JS로도 이동
-  setTimeout(() => { window.location.href = APP_URL; }, 300);
+// ── PWA: iOS 홈화면 배너 ─────────────────────────────
+function isIos() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+function isInStandaloneMode() {
+  return window.navigator.standalone === true;
+}
+function closePwaBanner() {
+  document.getElementById('pwa-banner').style.display = 'none';
+  sessionStorage.setItem('pwa-banner-closed', '1');
+}
+window.addEventListener('load', () => {
+  if (isIos() && !isInStandaloneMode() && !sessionStorage.getItem('pwa-banner-closed')) {
+    setTimeout(() => {
+      document.getElementById('pwa-banner').style.display = 'block';
+    }, 3000);
+  }
+});
+
+// Android: beforeinstallprompt 이벤트
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const banner = document.getElementById('pwa-banner');
+  banner.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div style="font-size:28px;">📱</div>
+      <div style="flex:1;">
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px;">홈 화면에 추가하기</div>
+        <div style="font-size:12px;color:#aaa;">LETUS 앱을 홈 화면에 추가하면 더 편리하게 사용할 수 있어요.</div>
+      </div>
+      <button onclick="installPwa()" style="background:#fff;color:#2A2A2A;border:none;
+        border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;">추가</button>
+      <button onclick="closePwaBanner()" style="background:none;border:none;color:#888;font-size:20px;cursor:pointer;">✕</button>
+    </div>`;
+  banner.style.display = 'block';
+});
+async function installPwa() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  closePwaBanner();
+}
 </script>
 </body>
 </html>
