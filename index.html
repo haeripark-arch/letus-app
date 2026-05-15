@@ -436,7 +436,7 @@ html, body { height: 100%; background: var(--gray50); font-family: 'Noto Sans KR
         <table class="log-table">
           <thead>
             <tr>
-              <th>날짜</th><th>형태</th><th>출근</th><th>퇴근</th>
+              <th>날짜</th><th>형태</th><th>출근</th><th>퇴근</th><th>지각</th>
             </tr>
           </thead>
           <tbody id="log-tbody">
@@ -608,6 +608,10 @@ function updateTodayUI() {
     inEl.classList.remove('empty');
     outEl.textContent = todayLog.clockOut || '—';
     typeEl.innerHTML  = workTypeBadge(todayLog.workType);
+    // 지각 뱃지 추가 표시
+    if (todayLog.lateStatus === '지각') {
+      typeEl.innerHTML += ' <span class="badge badge-absent" style="font-size:10px;">지각</span>';
+    }
 
     // 이미 출근 → 형태 선택 숨기고 퇴근 버튼만 표시
     wtSec.style.display = 'none';
@@ -748,8 +752,12 @@ async function doClock(dir) {
         lat: curLat,
         lng: curLng,
       });
-      todayLog = { ...res, workType: selWT, clockIn: res.clockIn, clockOut: '' };
-      toast(`출근 완료 ${res.clockIn}`, 'success');
+      todayLog = { ...res, workType: selWT, clockIn: res.clockIn, clockOut: '', lateStatus: res.lateStatus };
+      if (res.isLate) {
+        toast(`출근 완료 ${res.clockIn} — ⚠️ 지각`, 'error');
+      } else {
+        toast(`출근 완료 ${res.clockIn} — 정상출근 ✓`, 'success');
+      }
     } else {
       const res = await api({ action: 'clockOut', empId: emp.empId, lat: curLat, lng: curLng });
       todayLog.clockOut = res.clockOut;
@@ -781,6 +789,10 @@ async function loadHistory() {
         <td>${workTypeBadge(l.workType)}</td>
         <td style="font-family:'DM Mono',monospace">${l.clockIn  || '—'}</td>
         <td style="font-family:'DM Mono',monospace">${l.clockOut || '—'}</td>
+        <td>${l.lateStatus === '지각'
+          ? '<span class="badge badge-absent" style="font-size:10px;">지각</span>'
+          : l.clockIn ? '<span class="badge badge-normal" style="font-size:10px;">정상</span>' : '—'
+        }</td>
       </tr>
     `).join('');
   } catch(e) { toast(e.message, 'error'); }
