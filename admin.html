@@ -207,7 +207,7 @@ html, body { background: var(--gray50); font-family: 'Noto Sans KR', sans-serif;
       <thead>
         <tr>
           <th>이름</th><th>근무지</th><th>직책</th>
-          <th>근무형태</th><th>출근</th><th>퇴근</th><th>지각</th><th>수정</th><th>비밀번호</th>
+          <th>근무형태</th><th>출근</th><th>퇴근</th><th>최종</th><th>수정하기</th><th>비밀번호변경</th>
         </tr>
       </thead>
       <tbody id="emp-tbody">
@@ -309,7 +309,7 @@ function renderEmpTable(rows) {
         : e.clockIn ? '<span class="badge b-normal">정상</span>' : '<span style="color:#ddd">—</span>'
       }</td>
       <td><button class="approve-btn" style="background:#EEF4FF;color:#1565C0"
-        onclick="openAttModal('${e.empId}','${e.name}','${e.clockIn}','${e.lateStatus}')">수정</button></td>
+        onclick="openAttModal('${e.empId}','${e.name}','${e.clockIn}','${e.clockOut}','${e.lateStatus}')">수정하기</button></td>
       <td><button class="approve-btn" style="background:var(--gray50);color:var(--dark)"
         onclick="openPwModal('${e.empId}','${e.name}')">재설정</button></td>
     </tr>
@@ -380,13 +380,14 @@ function leaveBadge(lt) {
 let attTarget = {};
 let selectedLateStatus = '정상';
 
-function openAttModal(empId, name, clockIn, lateStatus) {
+function openAttModal(empId, name, clockIn, clockOut, lateStatus) {
   attTarget = { empId, name, date: new Date().toISOString().split('T')[0] };
   selectedLateStatus = lateStatus || '정상';
 
   document.getElementById('att-modal-target').textContent =
-    `${name} (${empId}) — 오늘 출근: ${clockIn || '미출근'}`;
-  document.getElementById('att-clockin-input').value = clockIn || '08:30';
+    `${name} (${empId}) — 출근: ${clockIn || '미입력'} / 퇴근: ${clockOut || '미입력'}`;
+  document.getElementById('att-clockin-input').value  = clockIn  || '';
+  document.getElementById('att-clockout-input').value = clockOut || '';
   document.getElementById('att-modal-err').style.display = 'none';
   document.getElementById('att-reason-input').value = '';
   updateLateButtons();
@@ -433,6 +434,7 @@ async function submitAttCorrect() {
     errEl.style.display = 'block';
     return;
   }
+  const clockOut = document.getElementById('att-clockout-input').value;
   try {
     await api({
       action:      'correctAttendance',
@@ -440,14 +442,17 @@ async function submitAttCorrect() {
       empId:       attTarget.empId,
       date:        attTarget.date,
       clockIn:     clockIn,
+      clockOut:    clockOut || '',
       lateStatus:  selectedLateStatus,
     });
     closeAttModal();
-    toast(`${attTarget.name} 근태 수정 완료 → ${clockIn} (${selectedLateStatus})`, 'success');
+    const outMsg = clockOut ? ` ~ ${clockOut}` : '';
+    toast(`${attTarget.name} 근태 수정 완료 → ${clockIn}${outMsg} (${selectedLateStatus})`, 'success');
     // 테이블 즉시 반영
     const row = allEmployees.find(e => e.empId === attTarget.empId);
     if (row) {
       row.clockIn     = clockIn;
+      row.clockOut    = clockOut;
       row.lateStatus  = selectedLateStatus;
       renderEmpTable(allEmployees);
     }
@@ -525,22 +530,30 @@ function toast(msg, type = '') {
     <div id="att-modal-err" style="display:none;background:#fee2e2;color:#B91C1C;font-size:12px;
       border-radius:8px;padding:9px 12px;margin-bottom:12px;text-align:center;"></div>
     <!-- 출근시간 수정 -->
-    <div style="margin-bottom:14px;">
+    <div style="margin-bottom:12px;">
       <label style="display:block;font-size:11px;font-weight:700;color:#bbb;
-        letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;">수정할 출근시간</label>
-      <input id="att-clockin-input" type="time" value="08:30"
+        letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;">출근시간 수정</label>
+      <input id="att-clockin-input" type="time"
         style="width:100%;padding:12px 14px;border:1.5px solid #eee;border-radius:11px;
         font-size:15px;font-family:inherit;outline:none;background:#fafafa;">
     </div>
-    <!-- 지각여부 선택 -->
-    <div style="margin-bottom:20px;">
+    <!-- 퇴근시간 수정 -->
+    <div style="margin-bottom:12px;">
       <label style="display:block;font-size:11px;font-weight:700;color:#bbb;
-        letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;">지각여부 수정</label>
+        letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;">퇴근시간 수정 <span style="font-size:10px;color:#aaa;font-weight:400;">(미입력 시 빈칸 유지)</span></label>
+      <input id="att-clockout-input" type="time"
+        style="width:100%;padding:12px 14px;border:1.5px solid #eee;border-radius:11px;
+        font-size:15px;font-family:inherit;outline:none;background:#fafafa;">
+    </div>
+    <!-- 최종 상태 선택 -->
+    <div style="margin-bottom:16px;">
+      <label style="display:block;font-size:11px;font-weight:700;color:#bbb;
+        letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;">최종 상태</label>
       <div style="display:flex;gap:8px;">
         <button id="late-btn-normal" onclick="selectLateStatus('정상')"
           style="flex:1;padding:10px;border-radius:10px;border:1.5px solid #3D3D3D;
           background:#3D3D3D;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">
-          ✓ 정상출근
+          ✓ 정상
         </button>
         <button id="late-btn-late" onclick="selectLateStatus('지각')"
           style="flex:1;padding:10px;border-radius:10px;border:1.5px solid #eee;
@@ -553,7 +566,7 @@ function toast(msg, type = '') {
     <div style="margin-bottom:16px;">
       <label style="display:block;font-size:11px;font-weight:700;color:#bbb;
         letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;">수정 사유 (선택)</label>
-      <input id="att-reason-input" type="text" placeholder="예: 시스템 오류로 인한 수동 수정"
+      <input id="att-reason-input" type="text" placeholder="예: 퇴근 미입력으로 인한 수동 수정"
         style="width:100%;padding:12px 14px;border:1.5px solid #eee;border-radius:11px;
         font-size:13px;font-family:inherit;outline:none;background:#fafafa;">
     </div>
