@@ -207,7 +207,7 @@ html, body { background: var(--gray50); font-family: 'Noto Sans KR', sans-serif;
       <thead>
         <tr>
           <th>이름</th><th>근무지</th><th>직책</th>
-          <th>근무형태</th><th>출근</th><th>퇴근</th><th>최종</th><th>수정하기</th><th>비밀번호변경</th>
+          <th>출근</th><th>퇴근</th><th>최종</th><th>수정</th><th>비밀번호</th>
         </tr>
       </thead>
       <tbody id="emp-tbody">
@@ -300,16 +300,16 @@ function renderEmpTable(rows) {
       <td><strong>${e.name}</strong></td>
       <td><span class="site-tag ${e.site==='양지센터'?'site-y1':'site-y3'}">${e.site}</span></td>
       <td style="color:var(--gray500);font-size:13px">${e.position}</td>
-      <td>${workBadge(e.workType)}</td>
       <td class="mono">${e.clockIn  || '<span style="color:var(--gray300)">—</span>'}</td>
       <td class="mono">${e.clockOut || '<span style="color:var(--gray300)">—</span>'}</td>
-      <td style="font-size:13px;color:var(--gray500)">${e.otType || ''}</td>
       <td>${e.lateStatus === '지각'
         ? '<span class="badge b-absent">지각</span>'
-        : e.clockIn ? '<span class="badge b-normal">정상</span>' : '<span style="color:#ddd">—</span>'
+        : e.clockIn
+          ? '<span class="badge b-normal">정상</span>'
+          : '<span style="color:var(--gray300)">—</span>'
       }</td>
       <td><button class="approve-btn" style="background:#EEF4FF;color:#1565C0"
-        onclick="openAttModal('${e.empId}','${e.name}','${e.clockIn}','${e.clockOut}','${e.lateStatus}')">수정하기</button></td>
+        onclick="openAttModal('${e.empId}','${e.name}','${e.clockIn}','${e.clockOut}','${e.lateStatus}')">수정</button></td>
       <td><button class="approve-btn" style="background:var(--gray50);color:var(--dark)"
         onclick="openPwModal('${e.empId}','${e.name}')">재설정</button></td>
     </tr>
@@ -345,7 +345,7 @@ function filterTable(el) {
   curFilter = el.dataset.filter;
   const filtered = curFilter === '전체'
     ? allEmployees
-    : allEmployees.filter(e => e.workType === curFilter);
+    : allEmployees.filter(e => curFilter === '정상' ? (e.workType === '정상' || e.workType === '정상출근') : e.workType === curFilter);
   renderEmpTable(filtered);
 }
 
